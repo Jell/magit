@@ -27,6 +27,7 @@ help:
 	$(info make html-dir         - generate html manual directories)
 	$(info make pdf              - generate pdf manuals)
 	$(info make epub             - generate epub manuals)
+	$(info make refcard          - generate refcard)
 	$(info )
 	$(info Install)
 	$(info =======)
@@ -90,6 +91,9 @@ pdf:
 
 epub:
 	@$(MAKE) -C docs epub
+
+refcard:
+	@$(MAKE) -C docs refcard
 
 ## Install ###########################################################
 
