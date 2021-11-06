@@ -1097,9 +1097,9 @@ range.  Otherwise, it can be any revision or range accepted by
                         "diff-tree" "-r" "--diff-filter=R" "-z" "-M"
                         revA revB))))
 
-(defun magit-file-status (&rest args)
+(defun magit-file-status (&optional file &rest args)
   (magit--with-temp-process-buffer
-    (save-excursion (magit-git-insert "status" "-z" args))
+    (save-excursion (magit-git-insert "status" "-z" args "--" file))
     (let ((pos (point)) status)
       (while (> (skip-chars-forward "[:print:]") 0)
         (let ((x (char-after     pos))
