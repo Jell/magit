@@ -126,33 +126,36 @@ recommend you do not further complicate that by enabling this.")
 ;;;###autoload
 (defun magit-ediff-resolve (file)
   "Resolve outstanding conflicts in FILE using Ediff.
-FILE has to be relative to the top directory of the repository.
-
-In the rare event that you want to manually resolve all
-conflicts, including those already resolved by Git, use
-`ediff-merge-revisions-with-ancestor'."
+FILE has to be relative to the top directory of the repository."
   (interactive (list (magit-read-unmerged-file)))
   (magit-with-toplevel
     (with-current-buffer (find-file-noselect file)
-      (smerge-ediff)
-      (setq-local
-       ediff-quit-hook
-       (lambda ()
-         (let ((bufC ediff-buffer-C)
-               (bufS smerge-ediff-buf))
-           (with-current-buffer bufS
-             (when (yes-or-no-p (format "Conflict resolution finished; save %s? "
-                                        buffer-file-name))
-               (erase-buffer)
-               (insert-buffer-substring bufC)
-               (save-buffer))))
-         (when (buffer-live-p ediff-buffer-A) (kill-buffer ediff-buffer-A))
-         (when (buffer-live-p ediff-buffer-B) (kill-buffer ediff-buffer-B))
-         (when (buffer-live-p ediff-buffer-C) (kill-buffer ediff-buffer-C))
-         (when (buffer-live-p ediff-ancestor-buffer)
-           (kill-buffer ediff-ancestor-buffer))
-         (let ((magit-ediff-previous-winconf smerge-ediff-windows))
-           (run-hooks 'magit-ediff-quit-hook)))))))
+      (let ((file-buffer (current-buffer))
+            (winconf (current-window-configuration)))
+        (set-buffer
+         (ediff-merge-buffers-with-ancestor (magit-find-file-noselect ":2" file)
+                                            (magit-find-file-noselect ":3" file)
+                                            (magit-find-file-noselect ":1" file)))
+        (ediff-toggle-show-clashes-only)
+        (when ediff-show-ancestor
+          (ediff-toggle-show-ancestor))
+        (setq-local
+         ediff-quit-hook
+         (lambda ()
+           (let ((bufC ediff-buffer-C))
+             (with-current-buffer file-buffer
+               (when (yes-or-no-p (format "Conflict resolution finished; save %s? "
+                                          buffer-file-name))
+                 (erase-buffer)
+                 (insert-buffer-substring bufC)
+                 (save-buffer))))
+           (when (buffer-live-p ediff-buffer-A) (kill-buffer ediff-buffer-A))
+           (when (buffer-live-p ediff-buffer-B) (kill-buffer ediff-buffer-B))
+           (when (buffer-live-p ediff-buffer-C) (kill-buffer ediff-buffer-C))
+           (when (buffer-live-p ediff-ancestor-buffer)
+             (kill-buffer ediff-ancestor-buffer))
+           (let ((magit-ediff-previous-winconf winconf))
+             (run-hooks 'magit-ediff-quit-hook))))))))
 
 (defmacro magit-ediff-buffers (quit &rest spec)
   (declare (indent 1))
